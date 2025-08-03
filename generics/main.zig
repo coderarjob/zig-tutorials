@@ -2,13 +2,27 @@ const std = @import("std");
 const print = std.debug.print;
 
 fn ListType(comptime T: type, comptime Functions: type) type {
-    const compare_fn: fn (a: T, b: T) bool = Functions.compare_fn;
-
     return struct {
-        pub fn search(list: []const T, item: T) bool {
-            for (list) |li| {
-                print("{any}, {any}\n", .{ li, item });
-                if (compare_fn(li, item)) return true;
+        comptime compare_fn: fn (a: T, b: T) bool = Functions.compare_fn,
+        inner_list: std.ArrayListUnmanaged(T) = .empty,
+
+        const Self = @This();
+
+        pub fn reserve(self: *Self, gpa: std.mem.Allocator, count: usize) !void {
+            try self.inner_list.ensureTotalCapacityPrecise(gpa, count);
+        }
+
+        pub fn deinit(self: *Self, gpa: std.mem.Allocator) void {
+            self.inner_list.deinit(gpa);
+        }
+
+        pub fn insert(self: *Self, item: T) void {
+            self.inner_list.appendAssumeCapacity(item);
+        }
+
+        pub fn search(self: Self, item: T) bool {
+            for (self.inner_list.items) |li| {
+                if (self.compare_fn(li, item)) return true;
             }
             return false;
         }
@@ -39,24 +53,32 @@ const AnimalList = ListType(Animal, struct {
     }
 });
 
-pub fn main() void {
-    const person_list = [_]Person{ 
-        .{ .id = @enumFromInt(10) },
-        .{ .id = @enumFromInt(12) },
-        .{ .id = @enumFromInt(120) }
-    };
+pub fn main() !void {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    const allocator = gpa.allocator();
+    defer std.debug.assert(gpa.deinit() == .ok);
 
-    const animal_list = [_]Animal{
-        .{ .badgeNumber = @enumFromInt(210) },
-        .{ .badgeNumber = @enumFromInt(212) },
-        .{ .badgeNumber = @enumFromInt(220) }
-    };
+    var person_list = PersonList{};
+    try person_list.reserve(allocator, 3);
+    defer person_list.deinit(allocator);
+
+    var animal_list = AnimalList{};
+    try animal_list.reserve(allocator, 3);
+    defer animal_list.deinit(allocator);
+
+    person_list.insert(.{ .id = @enumFromInt(10) });
+    person_list.insert(.{ .id = @enumFromInt(11) });
+    person_list.insert(.{ .id = @enumFromInt(12) });
+
+    animal_list.insert(.{ .badgeNumber = @enumFromInt(210) });
+    animal_list.insert(.{ .badgeNumber = @enumFromInt(211) });
+    animal_list.insert(.{ .badgeNumber = @enumFromInt(212) });
 
     const p = Person{ .id = @enumFromInt(12) };
-    const ra = PersonList.search(&person_list, p);
-    print("Person search result: {}\n", .{ra});
+    const ra = person_list.search(p);
+    print("{any} found: {}\n", .{ p, ra });
 
-    const a = Animal{ .badgeNumber = @enumFromInt(12) };
-    const rb = AnimalList.search(&animal_list, a);
-    print("Animal search result: {}\n", .{rb});
+    const a = Animal{ .badgeNumber = @enumFromInt(212) };
+    const rb = animal_list.search(a);
+    print("{any} found: {}\n", .{ a, rb });
 }
