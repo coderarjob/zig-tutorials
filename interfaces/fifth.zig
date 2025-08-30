@@ -6,7 +6,10 @@ const print = std.debug.print;
 // interface calls the actual implementation and a pointer to the container struct is passed. I
 // think this is similar to how the new Io interface works in the std lib.
 const Speaker = struct {
-    speak: *const fn (this: *const Speaker, what: []const u8) void,
+    sayfn: *const fn (this: *const Speaker, what: []const u8) void,
+    pub inline fn say(self: *const Speaker, what: []const u8) void {
+        self.sayfn(self, what);
+    }
     pub fn get_parent(self: *const Speaker, comptime T: type, comptime field_name: []const u8) *T {
         return @alignCast(@constCast(@fieldParentPtr(field_name, self)));
     }
@@ -25,7 +28,7 @@ const Human = struct {
         return .{
             .id = id,
             .speaker = .{
-                .speak = Human.say_hello,
+                .sayfn = Human.say_hello,
             },
         };
     }
@@ -44,7 +47,7 @@ const Dog = struct {
         return .{
             .id = id,
             .speaker = .{
-                .speak = Dog.bark,
+                .sayfn = Dog.bark,
             },
         };
     }
@@ -57,8 +60,11 @@ pub fn demo() void {
     const dog = Dog.create(283);
 
     var speaker = &man.speaker;
-    speaker.speak(speaker, "Hello");
+    speaker.say("Hello");
+    // the `Speaker.say()` method is optional. We could instead call the interface function pointer
+    // like so, `speaker.sayfn(speaker, "Hello")`. Note that without the `say` method, the function
+    // pointer could itself be named `say`.
 
     speaker = &dog.speaker;
-    speaker.speak(speaker, "Bark");
+    speaker.say("Bark");
 }
