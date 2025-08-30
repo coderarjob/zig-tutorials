@@ -1,3 +1,6 @@
+// first, second and third are similar. Uses opaque pointers to point to implementations.
+// fourth is an limited but easier & cleaner way to implement interfaces.
+// fifth provides similar extensibility as the first, but is easier & cleaner.
 const first = @import("first.zig");
 const second = @import("second.zig");
 const third = @import("third.zig");
