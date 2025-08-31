@@ -1,11 +1,14 @@
-// Implementation of a type which does struct of Arrays
-// Source: https://brevzin.github.io/c++/2025/05/02/soa/
-
+// Soa(T, N) generates 'Struct of Arrays' for struct T, where each field of T becomes an array in
+// the new type. Its is inspired by the MultiArrayList type in the Zig standard library, but has
+// much less features and thus simpler.
+// Further read: https://brevzin.github.io/c++/2025/05/02/soa/
+//
 // Goal:
 // const Point = struct {
 //  x: u32,
 //  y: u32
 // }
+//
 // const SoaPoints = Soa(Point, N);
 //
 // const SoaPoints = struct {
