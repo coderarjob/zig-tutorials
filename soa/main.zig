@@ -28,7 +28,7 @@ fn Soa(comptime T: type, comptime N: usize) type {
     // just their type is going to be an array.
     var out_fields: [in_fields.len]StructField = undefined;
 
-    inline for (in_fields, &out_fields) |in_field, *out_field| {
+    for (in_fields, &out_fields) |in_field, *out_field| {
         out_field.* = in_field;
         out_field.name = in_field.name ++ "s";
         out_field.type = [N]in_field.type;
@@ -53,7 +53,7 @@ pub fn main() !void {
     const PointsSoa = Soa(Point, 5);
     const t = PointsSoa{ .xs = .{ 0, 1, 2, 3, 4 }, .ys = .{ 5, 6, 7, 8, 9 } };
 
-    std.debug.print("{any}, {any}", .{ t.xs, t.ys });
+    std.debug.print("xs: {any}\nys: {any}\n", .{ t.xs, t.ys });
 }
 
 test "when there are not paddings - sizes must match" {
