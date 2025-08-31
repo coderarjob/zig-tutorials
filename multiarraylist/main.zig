@@ -42,9 +42,53 @@ fn Soa(comptime T: type, comptime N: usize) type {
 }
 
 pub fn main() !void {
-    const Point = struct { x: u32, y: u32 };
+    const Point = struct {
+        x: u32,
+        y: u32,
+    };
+
     const PointsSoa = Soa(Point, 5);
     const t = PointsSoa{ .xs = .{ 0, 1, 2, 3, 4 }, .ys = .{ 5, 6, 7, 8, 9 } };
 
     std.debug.print("{any}, {any}", .{ t.xs, t.ys });
+}
+
+test "when there are not paddings - sizes must match" {
+    const Point = struct {
+        x: u32,
+        y: u32,
+    };
+
+    const PointsSoa = Soa(Point, 100);
+
+    // Since Point struct has an padding types in Point, Array Of Sructs and Struct of Array must
+    // have same size.
+    try std.testing.expect(@sizeOf(Point) == 8);
+    try std.testing.expect(@sizeOf([100]Point) == @sizeOf(PointsSoa));
+}
+
+test "when there are paddings - SOA type should take less space" {
+    const Point = struct {
+        x: u32,
+        y: u32,
+        origin: bool,
+    };
+
+    const PointsSoa = Soa(Point, 100);
+
+    // Due to padding bytes, Point structure requires 12 bytes (3 extra padding bytes).
+    // In Soa(Point, 1) there are no padding, so its size if only whats required i.e. 9 bytes.
+    try std.testing.expect(@sizeOf(Point) == 12);
+
+    // For some reason, `@sizeOf(Soa(Point, 1))` is coming to be 12. May be compiler is allocating
+    // from a preallocated (and thus already aligned) buffer. To bypass this we are doing the
+    // following and then per item size is coming to be 9 bytes as expected.
+    try std.testing.expect(@sizeOf(PointsSoa) / 100 == 9);
+
+    // Its now obvious why the following will be true
+    try std.testing.expect(@sizeOf([100]Point) > @sizeOf(PointsSoa));
+
+    // Some stats for fun!
+    std.debug.print("Size of 100 Point: {} bytes\n", .{@sizeOf([100]Point)});
+    std.debug.print("Size of 100 Point SoAs: {} bytes\n", .{@sizeOf(PointsSoa)});
 }
