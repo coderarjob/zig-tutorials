@@ -64,8 +64,9 @@ test "when there are not paddings - sizes must match" {
 
     const PointsSoa = Soa(Point, 100);
 
-    // Since Point struct has an padding types in Point, Array Of Sructs and Struct of Array must
-    // have same size.
+    // Since Point struct has no padding bytes both Array Of Sructs and Struct of Array must have
+    // same size.
+    try std.testing.expect(@sizeOf(Point) == 2 * @sizeOf(u32));
     try std.testing.expect(@sizeOf(Point) == 8);
     try std.testing.expect(@sizeOf([100]Point) == @sizeOf(PointsSoa));
 }
